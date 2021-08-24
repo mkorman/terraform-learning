@@ -43,7 +43,7 @@ resource "aws_lb_listener" "http" {
 }
 
 resource "aws_lb_target_group" "asg" {
-    name = "terraform-asg-example"
+    name = "terraform-target-group"
     port = var.server_port
     protocol = "HTTP"
     vpc_id = data.aws_vpc.default.id
