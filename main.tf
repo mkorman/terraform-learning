@@ -8,6 +8,12 @@ variable "server_port" {
     default = 8080
 }
 
+variable "ssh_port" {
+    description = "The port the server will use for ssh"
+    type = number
+    default = 22
+}
+
 output "public_ip" {
   value = aws_instance.example.public_ip
   description = "The public IP address of our EC2 instance"
@@ -20,8 +26,9 @@ resource "aws_instance" "example" {
 
     user_data = <<EOF
         #!/bin/bash
-        echo "Hello, World" > index.html
-        nohup busybox httpd -f -p ${var.server_port} &
+        sudo yum install httpd -y
+        sudo httpd -c "Listen 8080"
+        echo "<h1>Hello, World</h1>" > /var/www/html/index.html
         EOF
 
     tags = {
@@ -42,7 +49,25 @@ resource "aws_security_group" "web_access" {
       prefix_list_ids = [  ]
       security_groups = [  ]
       self = false
-    } ]
+    },
+    {
+      from_port = 22
+      to_port = 22
+      cidr_blocks = [ "0.0.0.0/0" ]
+      protocol = "tcp"
+      description = "Allows incoming TCP connections on the configured server port"
+      ipv6_cidr_blocks = [  ]
+      prefix_list_ids = [  ]
+      security_groups = [  ]
+      self = false
+    }  ]
+
+    egress {
+        from_port = 0
+        to_port = 0
+        protocol = "-1"
+        cidr_blocks = ["0.0.0.0/0"]
+    }
 }
 
 data "aws_vpc" "default" {
