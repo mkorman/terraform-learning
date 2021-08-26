@@ -2,6 +2,15 @@ provider "aws" {
     region = "eu-west-2"
 }
 
+terraform {
+    backend "s3" {
+        bucket = "mk-terraform-bucket"
+        key = "stage/services/webserver-cluster/terraform.tfstate"
+        region = "eu-west-2"
+        encrypt = true
+    }
+}
+
 variable "server_port" {
     description = "The port the server will use for HTTP requests"
     type = number
@@ -18,6 +27,7 @@ output "alb_dns_name" {
   value = aws_alb.example_alb.dns_name
   description = "The domain name of the load balancer"
 }
+
 
 resource "aws_alb" "example_alb" {
     name = "terraformed-alb"
@@ -75,6 +85,7 @@ resource "aws_launch_configuration" "example_launch_config" {
         create_before_destroy = true
     }
 }
+
 
 resource "aws_autoscaling_group" "example_autoscaling_grop" {
     launch_configuration = aws_launch_configuration.example_launch_config.name
