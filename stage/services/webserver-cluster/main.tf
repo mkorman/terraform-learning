@@ -28,7 +28,6 @@ output "alb_dns_name" {
   description = "The domain name of the load balancer"
 }
 
-
 resource "aws_alb" "example_alb" {
     name = "terraformed-alb"
     load_balancer_type = "application"
@@ -73,19 +72,12 @@ resource "aws_launch_configuration" "example_launch_config" {
     image_id = "ami-04f1bbad31585405d"
     instance_type = "t2.micro"
     security_groups = [ aws_security_group.web_access.id ]
-
-    user_data = <<EOF
-        #!/bin/bash
-        sudo yum install httpd -y
-        sudo httpd -c "Listen 8080"
-        echo "<h1>Hello, World</h1>" > /var/www/html/index.html
-        EOF
+    user_data = data.template_file.user_data.rendered
 
     lifecycle {
         create_before_destroy = true
     }
 }
-
 
 resource "aws_autoscaling_group" "example_autoscaling_grop" {
     launch_configuration = aws_launch_configuration.example_launch_config.name
@@ -183,4 +175,26 @@ data "aws_vpc" "default" {
 
 data "aws_subnet_ids" "default" {
     vpc_id = data.aws_vpc.default.id
+}
+
+# Read data from the Terraform backend from the DB
+data "terraform_remote_state" "db" {
+    backend = "s3"
+
+    config = {
+        bucket = "mk-terraform-bucket"
+        key = "stage/data-stores/mysql/terraform.tfstate"
+        region = "eu-west-2"
+    }
+}
+
+
+data "template_file" "user_data" {
+    template = file ("user-data.sh")
+
+    vars = {
+        server_port = var.server_port
+        db_address  = data.terraform_remote_state.db.outputs.address
+        db_port  = data.terraform_remote_state.db.outputs.port
+    }
 }
