@@ -19,11 +19,6 @@ variable "ssh_port" {
   default     = 22
 }
 
-output "alb_dns_name" {
-  value       = aws_alb.example_alb.dns_name
-  description = "The domain name of the load balancer"
-}
-
 locals {
   ssh_port     = 22
   http_port    = 80
@@ -194,7 +189,7 @@ data "terraform_remote_state" "db" {
 }
 
 data "template_file" "user_data" {
-  template = file("./user-data.sh")
+  template = file("${path.module}/user-data.sh")
 
   vars = {
     server_port = var.server_port
